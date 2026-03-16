@@ -62,6 +62,18 @@ labels:
   description: Markdown extension(s)
 
 projects:
+- name: MkDocs theme
+  properdocs_theme: [mkdocs]
+  github_id: properdocs/properdocs
+  pypi_id: properdocs-theme-mkdocs
+  labels: [theme]
+  category: theming
+- name: ReadTheDocs theme
+  properdocs_theme: [readthedocs]
+  github_id: properdocs/properdocs
+  pypi_id: properdocs-theme-readthedocs
+  labels: [theme]
+  category: theming
 - name: Material for MkDocs
   mkdocs_theme: material
   mkdocs_plugin: [material/blog, material/group, material/offline, material/search, material/social, material/tags]
