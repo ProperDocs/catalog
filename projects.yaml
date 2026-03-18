@@ -269,15 +269,6 @@ projects:
   pypi_id: mkdocs-shadcn
   labels: [theme, plugin]
   category: theming
-- name: MaterialX for MkDocs
-  mkdocs_theme: materialx
-  mkdocs_plugin: [materialx/blog, materialx/group, materialx/info, materialx/meta, materialx/offline, materialx/optimize, materialx/privacy, materialx/search, materialx/social, materialx/tags]
-  extra_dependencies:
-    plugins.social: mkdocs-materialx[imaging]
-  github_id: jaywhj/mkdocs-materialx
-  pypi_id: mkdocs-materialx
-  labels: [theme, plugin]
-  category: theming
 
 - name: automacdoc
   github_id: AlexandreKempf/automacdoc
