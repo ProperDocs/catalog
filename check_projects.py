@@ -19,6 +19,7 @@ def _get_as_list(mapping, key):
 _kind_to_label = {
     "mkdocs_plugin": "plugin",
     "mkdocs_theme": "theme",
+    "properdocs_theme": "theme",
     "markdown_extension": "markdown",
 }
 
