@@ -4,32 +4,48 @@ import subprocess
 import sys
 import tempfile
 import textwrap
+from collections.abc import Collection, Mapping, Sequence
+from concurrent.futures import Future
 from pathlib import Path
+from typing import Any, Literal, Required, TypeAlias, TypedDict
 
 import yaml
 
+EntrypointType: TypeAlias = Literal["mkdocs_theme", "mkdocs_plugin", "markdown_extension"]
 
-def _get_as_list(mapping, key):
-    names = mapping.get(key, ())
+
+class Project(TypedDict, total=False):
+    name: Required[str]
+    category: Required[str]
+    labels: Collection[str]
+    mkdocs_theme: str | Collection[str]
+    mkdocs_plugin: str | Collection[str]
+    markdown_extension: str | Collection[str]
+    github_id: str
+    pypi_id: str
+
+
+def _get_as_list(mapping: Project, key: EntrypointType) -> Collection[str]:
+    names: str | Collection[str] = mapping.get(key, ())
     if isinstance(names, str):
         names = (names,)
     return names
 
 
-_kind_to_label = {
+_kind_to_label: Mapping[EntrypointType, str] = {
     "mkdocs_plugin": "plugin",
     "mkdocs_theme": "theme",
     "markdown_extension": "markdown",
 }
 
-config = yaml.safe_load(Path("projects.yaml").read_text(encoding="utf-8"))
+config: Mapping[str, Any] = yaml.safe_load(Path("projects.yaml").read_text(encoding="utf-8"))
 
-projects = config["projects"]
-all_labels = dict.fromkeys(label["label"] for label in config["labels"])
-all_categories = dict.fromkeys(category["category"] for category in config["categories"])
+projects: Sequence[Project] = config["projects"]
+all_labels: Collection[str] = dict.fromkeys(label["label"] for label in config["labels"])
+all_categories: Collection[str] = dict.fromkeys(category["category"] for category in config["categories"])
 
 
-def check_install_project(project, install_name, errors=None):
+def check_install_project(project: Project, install_name: str, errors: list[str] | None = None) -> list[str] | None:
     if errors is None:
         errors = []
 
@@ -47,13 +63,15 @@ def check_install_project(project, install_name, errors=None):
             errors.append(f"Failed {e.cmd}:\n{e.stderr}")
             return None
 
-        entry_points = configparser.ConfigParser()
+        entry_points_parser = configparser.ConfigParser()
         try:
             [entry_points_file] = Path(directory).glob("*.dist-info/entry_points.txt")
-            entry_points.read_string(entry_points_file.read_text())
+            entry_points_parser.read_string(entry_points_file.read_text())
         except ValueError:
             pass
-        entry_points = {sect: list(entry_points[sect]) for sect in entry_points.sections()}
+        entry_points: dict[str, list[str]] = {
+            sect: list(entry_points_parser[sect]) for sect in entry_points_parser.sections()
+        }
 
         for item in _get_as_list(project, "mkdocs_plugin"):
             if item not in entry_points.get("mkdocs.plugins", ()):
@@ -83,12 +101,12 @@ def check_install_project(project, install_name, errors=None):
 pool = concurrent.futures.ThreadPoolExecutor(4)
 
 # Tracks shadowing: projects earlier in the list take precedence.
-available = {k: {} for k in _kind_to_label}
+available: dict[EntrypointType, dict[str, str]] = {k: {} for k in _kind_to_label}
 
-futures = []
+futures: list[tuple[str, Future[list[str] | None]]] = []
 
 for project in projects:
-    errors = []
+    errors: list[str] = []
 
     name = project.get("name")
     if not name:
@@ -126,7 +144,7 @@ for project in projects:
             else:
                 available[kind][item] = name
 
-    install_name = None
+    install_name: str | None = None
     if any(key in project for key in _kind_to_label):
         if "pypi_id" in project:
             install_name = project["pypi_id"]
@@ -138,10 +156,11 @@ for project in projects:
         else:
             errors.append("Missing 'pypi_id:'")
 
+    fut: Future[list[str] | None]
     if install_name:
         fut = pool.submit(check_install_project, project, install_name, errors)
     else:
-        fut = concurrent.futures.Future()
+        fut = Future()
         fut.set_result(errors)
     futures.append((name, fut))
 
