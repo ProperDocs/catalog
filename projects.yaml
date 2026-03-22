@@ -287,6 +287,20 @@ projects:
   extra_dependencies:
     plugins.mkdocstrings.handlers.crystal: mkdocstrings-crystal
     plugins.mkdocstrings.handlers.python: mkdocstrings-python
+    plugins.mkdocstrings.handlers.vba: mkdocstrings-vba
+    plugins.mkdocstrings.handlers.shell: mkdocstrings-shell
+    plugins.mkdocstrings.handlers.matlab: mkdocstrings-matlab
+    plugins.mkdocstrings.handlers.github: mkdocstrings-github
+    plugins.mkdocstrings.handlers.c: mkdocstrings-c
+    plugins.mkdocstrings.handlers.python.options.extensions.griffe_autodocstringstyle: griffe-autodocstringstyle
+    plugins.mkdocstrings.handlers.python.options.extensions.griffe_inherited_docstrings: griffe-inherited-docstrings
+    plugins.mkdocstrings.handlers.python.options.extensions.griffe_public_redundant_aliases: griffe-public-redundant-aliases
+    plugins.mkdocstrings.handlers.python.options.extensions.griffe_public_wildcard_imports: griffe-public-wildcard-imports
+    plugins.mkdocstrings.handlers.python.options.extensions.griffe_pydantic: griffe-pydantic
+    plugins.mkdocstrings.handlers.python.options.extensions.griffe_runtime_objects: griffe-runtime-objects
+    plugins.mkdocstrings.handlers.python.options.extensions.griffe_sphinx: griffe-sphinx
+    plugins.mkdocstrings.handlers.python.options.extensions.griffe_typingdoc: griffe-typingdoc
+    plugins.mkdocstrings.handlers.python.options.extensions.griffe_warnings_deprecated: griffe-warnings-deprecated
   github_id: mkdocstrings/mkdocstrings
   pypi_id: mkdocstrings
   labels: [plugin]
@@ -1006,6 +1020,7 @@ projects:
 - name: MkDocs Pygments
   mkdocs_plugin: pygments
   github_id: pawamoy/mkdocs-pygments
+  pypi_id: mkdocs-pygments
   license: ISC
   labels: [plugin]
   category: html-css
