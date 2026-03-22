@@ -1,0 +1,27 @@
+name: Auto-fix
+on:
+  push:
+  pull_request:
+jobs:
+  style:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download source
+        uses: actions/checkout@v6
+      - name: Install Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+      - name: Install dependencies
+        run: |
+          pip install --no-deps -r requirements/requirements-style.txt
+      - name: Fix code style
+        run: |
+          ruff check --fix --unsafe-fixes
+          ruff format -q
+      - name: Check if any edits are necessary
+        run: |
+          git diff --color --exit-code
+      - name: Apply automatic fixes using pre-commit-ci-lite
+        if: failure() && github.event_name == 'pull_request'
+        uses: pre-commit-ci/lite-action@5d6cc0eb514c891a40562a58a8e71576c5c7fb43 # v1.1.0
