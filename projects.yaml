@@ -1,16 +1,15 @@
 configuration:
-  markdown_header_file: "config/header.md"
-  markdown_footer_file: "config/footer.md"
+  markdown_header_file: config/header.md
+  markdown_footer_file: config/footer.md
   min_description_length: 0
   max_description_length: 1000  # don't truncate descriptions
   min_stars: 0
   min_projectrank: 0
   require_homepage: false
   require_license: false
-  allowed_licenses: ["all"]
+  allowed_licenses: [all]
   project_inactive_months: 12
   project_dead_months: 99999  # "dead" is a somewhat strong assumption, so we avoid making it
-
 categories:
 - category: theming
   title: 🎨 Theming
@@ -46,7 +45,6 @@ categories:
   title: 🔧 Site building, site management
 - category: snippets-include
   title: 📁 Snippets & includes (reusing contents)
-
 labels:
 - label: plugin
   image: https://cdn.icon-icons.com/icons2/1465/PNG/32/701electricplug_100845.png
@@ -60,7 +58,6 @@ labels:
 - label: markdown
   image: https://cdn.icon-icons.com/icons2/1459/PNG/32/2799201-jigsaw-processing_99781.png
   description: Markdown extension(s)
-
 projects:
 - name: MkDocs theme
   properdocs_theme: [mkdocs]
@@ -76,9 +73,10 @@ projects:
   category: theming
 - name: Material for MkDocs
   mkdocs_theme: material
-  mkdocs_plugin: [material/blog, material/group, material/offline, material/search, material/social, material/tags]
+  mkdocs_plugin: [material/blog, material/group, material/info, material/meta, material/offline, material/optimize, material/privacy, material/projects, material/search, material/social, material/tags, material/typeset]
   extra_dependencies:
     plugins.social: mkdocs-material[imaging]
+    plugins.optimize: mkdocs-material[imaging]
   github_id: squidfunk/mkdocs-material
   pypi_id: mkdocs-material
   labels: [theme, plugin]
@@ -187,7 +185,7 @@ projects:
   labels: [theme]
   category: theming
 - name: Zettelkasten
-  mkdocs_theme: zettelkasten-solarized-light
+  mkdocs_theme: zettelkasten
   mkdocs_plugin: [zettelkasten]
   github_id: buvis/mkdocs-zettelkasten
   pypi_id: mkdocs-zettelkasten
@@ -274,11 +272,11 @@ projects:
   mkdocs_plugin: [materialx/blog, materialx/group, materialx/info, materialx/meta, materialx/offline, materialx/optimize, materialx/privacy, materialx/search, materialx/social, materialx/tags]
   extra_dependencies:
     plugins.social: mkdocs-materialx[imaging]
+    plugins.optimize: mkdocs-material[imaging]
   github_id: jaywhj/mkdocs-materialx
   pypi_id: mkdocs-materialx
   labels: [theme, plugin]
   category: theming
-
 - name: automacdoc
   github_id: AlexandreKempf/automacdoc
   pypi_id: automacdoc
@@ -429,7 +427,6 @@ projects:
   pypi_id: mkdocs-apidescribed-plugin
   labels: [plugin]
   category: api-docs
-
 - name: blog
   mkdocs_plugin: blog
   github_id: andyoakley/mkdocs-blog
@@ -473,7 +470,6 @@ projects:
   pypi_id: mkdocs-publisher
   labels: [plugin]
   category: blogging
-
 - name: mkdocs_puml
   mkdocs_plugin: plantuml
   github_id: MikhailKravets/mkdocs_puml
@@ -714,7 +710,6 @@ projects:
   pypi_id: mkdocs-matplotlib
   labels: [plugin]
   category: charts
-
 - name: pheasant
   mkdocs_plugin: pheasant
   github_id: daizutabi/pheasant
@@ -855,7 +850,6 @@ projects:
   labels: [plugin]
   license: Apache-2
   category: code-exec-templating
-
 - name: recently-updated
   mkdocs_plugin: recently-updated
   github_id: jaywhj/mkdocs-recently-updated-docs
@@ -930,7 +924,6 @@ projects:
   pypi_id: mkdocs-github-changelog
   labels: [plugin]
   category: git-info
-
 - name: docstyler
   mkdocs_plugin: docstyler
   github_id: hfagerlund/mkdocs-docstyler-plugin
@@ -1030,7 +1023,6 @@ projects:
   mkdocs_plugin: mk-append-to-head
   labels: [plugin]
   category: html-css
-
 - name: static-i18n
   mkdocs_plugin: i18n
   github_id: ultrabug/mkdocs-static-i18n
@@ -1050,7 +1042,6 @@ projects:
   pypi_id: mkdocs-translations
   labels: [plugin]
   category: i18n-l10n
-
 - name: swagger
   mkdocs_plugin: swagger
   github_id: allevo/mkdocs-swagger-plugin
@@ -1127,7 +1118,6 @@ projects:
   pypi_id: mkdocs-copy-to-llm
   labels: [plugin]
   category: integrations
-
 - name: Autolink References
   mkdocs_plugin: autolink_references
   github_id: theskumar/autolink-references-mkdocs-plugin
@@ -1271,7 +1261,6 @@ projects:
   pypi_id: mkdocs-backlinks-section-plugin
   labels: [plugin]
   category: links-refs
-
 - name: markdown-callouts
   markdown_extension: [callouts, github-callouts]
   github_id: oprypin/markdown-callouts
@@ -1440,7 +1429,6 @@ projects:
   license: ISC
   labels: [markdown]
   category: markdown
-
 - name: exclude
   mkdocs_plugin: exclude
   github_id: apenwarr/mkdocs-exclude
@@ -1518,11 +1506,6 @@ projects:
   mkdocs_plugin: categories
   github_id: eddyluten/mkdocs-categories-plugin
   pypi_id: mkdocs-categories-plugin
-  labels: [plugin]
-  category: nav-pages
-- name: filename-title
-  mkdocs_plugin: filename_title
-  github_id: mipro98/mkdocs-filename-title-plugin
   labels: [plugin]
   category: nav-pages
 - name: mkdocs-title-casing-plugin
@@ -1622,7 +1605,6 @@ projects:
   pypi_id: mkdocs-authors-plugin
   labels: [plugin]
   category: nav-pages
-
 - name: mkdocs-spellcheck
   mkdocs_plugin: spellcheck
   github_id: pawamoy/mkdocs-spellcheck
@@ -1658,7 +1640,6 @@ projects:
   labels: [plugin]
   license: MIT
   category: quality
-
 - name: mkdocs-task-collector
   mkdocs_plugin: task-collector
   github_id: costantinoai/mkdocs-task-collector
@@ -1696,7 +1677,6 @@ projects:
   pypi_id: mkdocs-extract-listings-plugin
   labels: [plugin]
   category: search-toc
-
 - name: mkdocs-with-pdf
   mkdocs_plugin: with-pdf
   github_id: orzih/mkdocs-with-pdf
@@ -1719,12 +1699,6 @@ projects:
   mkdocs_plugin: print-site
   github_id: timvink/mkdocs-print-site-plugin
   pypi_id: mkdocs-print-site-plugin
-  labels: [plugin]
-  category: site-conversion
-- name: mk2pdf-export
-  mkdocs_plugin: mk2pdf-export
-  github_id: HaoLiuHust/mkdocs-mk2pdf-plugin
-  pypi_id: mkdocs-mk2pdf-plugin
   labels: [plugin]
   category: site-conversion
 - name: pdf-with-js
@@ -1762,7 +1736,6 @@ projects:
   pypi_id: mkdocs-exporter
   labels: [plugin]
   category: site-conversion
-
 - name: markdown-docs
   github_id: ldeluigi/markdown-docs
   dockerhub_id: deloo/markdown-docs
@@ -1870,7 +1843,7 @@ projects:
 - name: mkdocs-required-frontmatter-plugin
   mkdocs_plugin: required-frontmatter
   github_id: unmc-vcr/mkdocs-required-frontmatter-plugin
-  pypi_id:  mkdocs-required-frontmatter-plugin
+  pypi_id: mkdocs-required-frontmatter-plugin
   labels: [plugin]
   category: site-management
 - name: Publisher for MkDocs - debugger
@@ -1892,7 +1865,6 @@ projects:
   pypi_id: mkdocs-note
   labels: [plugin]
   category: site-management
-
 - name: mkdocs-embed-external-markdown
   mkdocs_plugin: external-markdown
   github_id: fire1ce/mkdocs-embed-external-markdown

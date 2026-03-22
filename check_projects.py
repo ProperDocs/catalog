@@ -4,38 +4,58 @@ import subprocess
 import sys
 import tempfile
 import textwrap
+from collections.abc import Collection, Mapping, Sequence
+from concurrent.futures import Future
 from pathlib import Path
+from typing import Any, Literal, Required, TypeAlias, TypedDict, cast
 
 import yaml
 
+EntrypointType: TypeAlias = Literal[
+    "properdocs_theme", "mkdocs_theme", "properdocs_plugin", "mkdocs_plugin", "markdown_extension"
+]
 
-def _get_as_list(mapping, key):
-    names = mapping.get(key, ())
+
+class Project(TypedDict, total=False):
+    name: Required[str]
+    category: Required[str]
+    labels: Collection[str]
+    properdocs_theme: str | Collection[str]
+    mkdocs_theme: str | Collection[str]
+    properdocs_plugin: str | Collection[str]
+    mkdocs_plugin: str | Collection[str]
+    markdown_extension: str | Collection[str]
+    github_id: str
+    pypi_id: str
+
+
+def _get_as_list(mapping: Project, key: EntrypointType) -> Collection[str]:
+    names: str | Collection[str] = mapping.get(key, ())
     if isinstance(names, str):
         names = (names,)
     return names
 
 
-_kind_to_label = {
-    "mkdocs_plugin": "plugin",
-    "mkdocs_theme": "theme",
-    "markdown_extension": "markdown",
+_kinds_to_label: Mapping[Collection[EntrypointType], str] = {
+    ("properdocs_plugin", "mkdocs_plugin"): "plugin",
+    ("properdocs_theme", "mkdocs_theme"): "theme",
+    ("markdown_extension",): "markdown",
 }
 
-config = yaml.safe_load(Path("projects.yaml").read_text())
+config: Mapping[str, Any] = yaml.safe_load(Path("projects.yaml").read_text(encoding="utf-8"))
 
-projects = config["projects"]
-all_labels = dict.fromkeys(label["label"] for label in config["labels"])
-all_categories = dict.fromkeys(category["category"] for category in config["categories"])
+projects: Sequence[Project] = config["projects"]
+all_labels: Collection[str] = dict.fromkeys(label["label"] for label in config["labels"])
+all_categories: Collection[str] = dict.fromkeys(category["category"] for category in config["categories"])
 
 
-def check_install_project(project, install_name, errors=None):
+def check_install_project(project: Project, install_name: str, errors: list[str] | None = None) -> list[str]:
     if errors is None:
         errors = []
 
     with tempfile.TemporaryDirectory(prefix="best-of-mkdocs-") as directory:
         try:
-            result = subprocess.run(
+            subprocess.run(
                 ["pip", "install", "-U", "--ignore-requires-python", "--no-deps", "--target", directory, install_name],
                 stdin=subprocess.DEVNULL,
                 capture_output=True,
@@ -45,15 +65,17 @@ def check_install_project(project, install_name, errors=None):
             )
         except (subprocess.CalledProcessError, subprocess.TimeoutExpired) as e:
             errors.append(f"Failed {e.cmd}:\n{e.stderr}")
-            return
+            return errors
 
-        entry_points = configparser.ConfigParser()
+        entry_points_parser = configparser.ConfigParser()
         try:
-            [entry_points_file] = Path(directory).glob(f"*.dist-info/entry_points.txt")
-            entry_points.read_string(entry_points_file.read_text())
+            [entry_points_file] = Path(directory).glob("*.dist-info/entry_points.txt")
+            entry_points_parser.read_string(entry_points_file.read_text())
         except ValueError:
             pass
-        entry_points = {sect: list(entry_points[sect]) for sect in entry_points.sections()}
+        entry_points: dict[str, list[str]] = {
+            sect: list(entry_points_parser[sect]) for sect in entry_points_parser.sections()
+        }
 
         for item in _get_as_list(project, "mkdocs_plugin"):
             if item not in entry_points.get("mkdocs.plugins", ()):
@@ -68,7 +90,7 @@ def check_install_project(project, install_name, errors=None):
                 base_path = item.replace(".", "/")
                 for pattern in base_path + ".py", base_path + "/__init__.py":
                     path = Path(directory, pattern)
-                    if path.is_file() and "makeExtension" in path.read_text():
+                    if path.is_file() and "makeExtension" in path.read_text(encoding="utf-8"):
                         break
                 else:
                     errors.append(
@@ -83,12 +105,12 @@ def check_install_project(project, install_name, errors=None):
 pool = concurrent.futures.ThreadPoolExecutor(4)
 
 # Tracks shadowing: projects earlier in the list take precedence.
-available = {k: {} for k in _kind_to_label}
+available: dict[EntrypointType, dict[str, str]] = {k: {} for keys in _kinds_to_label for k in keys}
 
-futures = []
+futures: list[tuple[str, Future[list[str]]]] = []
 
 for project in projects:
-    errors = []
+    errors: list[str] = []
 
     name = project.get("name")
     if not name:
@@ -104,30 +126,34 @@ for project in projects:
         if label not in all_labels:
             errors.append(f"Unknown label: {label!r} - should be one of: {', '.join(all_labels)}")
 
-    for kind, label in _kind_to_label.items():
-        items = _get_as_list(project, kind)
-
+    for kinds, label in _kinds_to_label.items():
         if label == "plugin" and "theme" in labels and "plugin" not in labels:
             pass
-        elif (label in labels) != bool(items):
-            errors.append(f"'{label}' label should be present if and only if '{kind}:' is present")
+        elif (label in labels) != any(bool(project.get(kind)) for kind in kinds):
+            errors.append(f"'{label}' label should be present if and only if '{kinds}:' is present")
 
-        for item in items:
-            already_available = available[kind].get(item) or (
-                kind == "mkdocs_plugin" and available[kind].get(item.split("/")[-1])
-            )
-            if already_available:
-                if kind not in project.get("shadowed", ()):
-                    errors.append(
-                        f"{kind} '{item.split('/')[-1]}' is present in both project '{already_available}' and '{name}'.\n"
-                        f"If that is expected, the later of the two projects will be ignored, "
-                        f"and to indicate this, it should contain 'shadowed: [{kind}]'"
-                    )
-            else:
-                available[kind][item] = name
+        for kind in kinds:
+            items = _get_as_list(project, kind)
 
-    install_name = None
-    if any(key in project for key in _kind_to_label):
+            for item in items:
+                already_available: str | None = None
+                for subkind in (kind, cast("EntrypointType", kind.replace("mkdocs", "properdocs"))):
+                    if already_available is None:
+                        already_available = available[subkind].get(item)
+                    if already_available is None and "plugin" in kind:
+                        already_available = available[subkind].get(item.split("/")[-1])
+
+                if already_available:
+                    if kind not in project.get("shadowed", ()):
+                        errors.append(
+                            f"{kind} '{item.split('/')[-1]}' is present in both project '{already_available}' and '{name}'.\n"
+                            f"If that is expected, the later of the two projects will be ignored, "
+                            f"and to indicate this, it should contain 'shadowed: [{kind}]'"
+                        )
+                available[kind].setdefault(item, name)
+
+    install_name: str | None = None
+    if any(key in project for keys in _kinds_to_label for key in keys):
         if "pypi_id" in project:
             install_name = project["pypi_id"]
             if "_" in install_name:
@@ -138,10 +164,11 @@ for project in projects:
         else:
             errors.append("Missing 'pypi_id:'")
 
+    fut: Future[list[str]]
     if install_name:
         fut = pool.submit(check_install_project, project, install_name, errors)
     else:
-        fut = concurrent.futures.Future()
+        fut = Future()
         fut.set_result(errors)
     futures.append((name, fut))
 
