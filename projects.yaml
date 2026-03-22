@@ -76,9 +76,10 @@ projects:
   category: theming
 - name: Material for MkDocs
   mkdocs_theme: material
-  mkdocs_plugin: [material/blog, material/group, material/offline, material/search, material/social, material/tags]
+  mkdocs_plugin: [material/blog, material/group, material/info, material/meta, material/offline, material/optimize, material/privacy, material/projects, material/search, material/social, material/tags, material/typeset]
   extra_dependencies:
     plugins.social: mkdocs-material[imaging]
+    plugins.optimize: mkdocs-material[imaging]
   github_id: squidfunk/mkdocs-material
   pypi_id: mkdocs-material
   labels: [theme, plugin]
@@ -187,7 +188,7 @@ projects:
   labels: [theme]
   category: theming
 - name: Zettelkasten
-  mkdocs_theme: zettelkasten-solarized-light
+  mkdocs_theme: zettelkasten
   mkdocs_plugin: [zettelkasten]
   github_id: buvis/mkdocs-zettelkasten
   pypi_id: mkdocs-zettelkasten
@@ -1511,11 +1512,6 @@ projects:
   pypi_id: mkdocs-categories-plugin
   labels: [plugin]
   category: nav-pages
-- name: filename-title
-  mkdocs_plugin: filename_title
-  github_id: mipro98/mkdocs-filename-title-plugin
-  labels: [plugin]
-  category: nav-pages
 - name: mkdocs-title-casing-plugin
   mkdocs_plugin: title-casing
   github_id: mattchristopher314/mkdocs-title-casing-plugin
@@ -1710,12 +1706,6 @@ projects:
   mkdocs_plugin: print-site
   github_id: timvink/mkdocs-print-site-plugin
   pypi_id: mkdocs-print-site-plugin
-  labels: [plugin]
-  category: site-conversion
-- name: mk2pdf-export
-  mkdocs_plugin: mk2pdf-export
-  github_id: HaoLiuHust/mkdocs-mk2pdf-plugin
-  pypi_id: mkdocs-mk2pdf-plugin
   labels: [plugin]
   category: site-conversion
 - name: pdf-with-js
