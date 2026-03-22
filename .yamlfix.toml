@@ -1,0 +1,6 @@
+explicit_start = false
+line_length = 1000
+indent_offset = 0
+indent_mapping = 2
+indent_sequence = 2
+none_representation = "null"
