@@ -272,7 +272,7 @@ projects:
   mkdocs_plugin: [materialx/blog, materialx/group, materialx/info, materialx/meta, materialx/offline, materialx/optimize, materialx/privacy, materialx/search, materialx/social, materialx/tags]
   extra_dependencies:
     plugins.social: mkdocs-materialx[imaging]
-    plugins.optimize: mkdocs-material[imaging]
+    plugins.optimize: mkdocs-materialx[imaging]
   github_id: jaywhj/mkdocs-materialx
   pypi_id: mkdocs-materialx
   labels: [theme, plugin]
