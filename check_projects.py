@@ -45,7 +45,7 @@ all_labels: Collection[str] = dict.fromkeys(label["label"] for label in config["
 all_categories: Collection[str] = dict.fromkeys(category["category"] for category in config["categories"])
 
 
-def check_install_project(project: Project, install_name: str, errors: list[str] | None = None) -> list[str] | None:
+def check_install_project(project: Project, install_name: str, errors: list[str] | None = None) -> list[str]:
     if errors is None:
         errors = []
 
@@ -61,7 +61,7 @@ def check_install_project(project: Project, install_name: str, errors: list[str]
             )
         except (subprocess.CalledProcessError, subprocess.TimeoutExpired) as e:
             errors.append(f"Failed {e.cmd}:\n{e.stderr}")
-            return None
+            return errors
 
         entry_points_parser = configparser.ConfigParser()
         try:
@@ -103,7 +103,7 @@ pool = concurrent.futures.ThreadPoolExecutor(4)
 # Tracks shadowing: projects earlier in the list take precedence.
 available: dict[EntrypointType, dict[str, str]] = {k: {} for k in _kind_to_label}
 
-futures: list[tuple[str, Future[list[str] | None]]] = []
+futures: list[tuple[str, Future[list[str]]]] = []
 
 for project in projects:
     errors: list[str] = []
@@ -156,7 +156,7 @@ for project in projects:
         else:
             errors.append("Missing 'pypi_id:'")
 
-    fut: Future[list[str] | None]
+    fut: Future[list[str]]
     if install_name:
         fut = pool.submit(check_install_project, project, install_name, errors)
     else:
