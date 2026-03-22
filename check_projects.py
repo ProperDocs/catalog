@@ -22,7 +22,7 @@ _kind_to_label = {
     "markdown_extension": "markdown",
 }
 
-config = yaml.safe_load(Path("projects.yaml").read_text())
+config = yaml.safe_load(Path("projects.yaml").read_text(encoding="utf-8"))
 
 projects = config["projects"]
 all_labels = dict.fromkeys(label["label"] for label in config["labels"])
@@ -35,7 +35,7 @@ def check_install_project(project, install_name, errors=None):
 
     with tempfile.TemporaryDirectory(prefix="best-of-mkdocs-") as directory:
         try:
-            result = subprocess.run(
+            subprocess.run(
                 ["pip", "install", "-U", "--ignore-requires-python", "--no-deps", "--target", directory, install_name],
                 stdin=subprocess.DEVNULL,
                 capture_output=True,
@@ -45,11 +45,11 @@ def check_install_project(project, install_name, errors=None):
             )
         except (subprocess.CalledProcessError, subprocess.TimeoutExpired) as e:
             errors.append(f"Failed {e.cmd}:\n{e.stderr}")
-            return
+            return None
 
         entry_points = configparser.ConfigParser()
         try:
-            [entry_points_file] = Path(directory).glob(f"*.dist-info/entry_points.txt")
+            [entry_points_file] = Path(directory).glob("*.dist-info/entry_points.txt")
             entry_points.read_string(entry_points_file.read_text())
         except ValueError:
             pass
@@ -68,7 +68,7 @@ def check_install_project(project, install_name, errors=None):
                 base_path = item.replace(".", "/")
                 for pattern in base_path + ".py", base_path + "/__init__.py":
                     path = Path(directory, pattern)
-                    if path.is_file() and "makeExtension" in path.read_text():
+                    if path.is_file() and "makeExtension" in path.read_text(encoding="utf-8"):
                         break
                 else:
                     errors.append(
