@@ -18,7 +18,10 @@ jobs:
       - name: Fix code style
         run: |
           ruff check --fix --unsafe-fixes
-          ruff format -q
+          ruff format
+      - name: Fix YAML style
+        run: |
+          yamlfix projects.yaml
       - name: Check if any edits are necessary
         run: |
           git diff --color --exit-code
