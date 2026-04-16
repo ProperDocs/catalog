@@ -1,79 +1,32 @@
-# Based on https://github.com/best-of-lists/best-of-update-action/blob/v0.8.5/workflows/update-best-of-list.yml
 name: update-best-of-list
 
 on:
   workflow_dispatch:
-    inputs:
-      version:
-        description: "Version to use for this update"
-        required: false
   schedule:
-    - cron: "0 18 * * 4" # Every thursday at 6pm
+    - cron: '32 6 * * 6'  # At 06:32 every Saturday
 
-env:
-  BRANCH_PREFIX: "update/"
-  DEFAULT_BRANCH: "main"
+permissions:
+  contents: write
+  pull-requests: write
 
 jobs:
   update-best-of-list:
     runs-on: ubuntu-latest
     steps:
-      - if: ${{ github.event.inputs != null  &&  github.event.inputs.version != null }}
-        name: set-version-from-input
-        run: echo "VERSION=${{ github.event.inputs.version }}" >> $GITHUB_ENV
-      - if: ${{ ! (env.VERSION != null && env.VERSION != '') }}
-        name: set-version-via-date
-        run: echo "VERSION=$(date '+%Y.%m.%d')" >> $GITHUB_ENV
-      - uses: actions/checkout@v4
-      - name: check-version-tag
-        shell: bash
-        run: |
-          git fetch --tags --force
-          git show-ref --tags --verify --quiet -- "refs/tags/${{ env.VERSION }}" && echo "VERSION=$(date '+%Y.%m.%d-%H.%M')" >> $GITHUB_ENV || exit 0
-      - name: create-update-branch
-        uses: peterjgrainger/action-create-branch@v3.0.0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Download source
+        uses: actions/checkout@v6
         with:
-          branch: "${{ env.BRANCH_PREFIX }}${{ env.VERSION }}"
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-          ref: ${{ env.BRANCH_PREFIX }}${{ env.VERSION }}
-          token: ${{ secrets.GITHUB_TOKEN }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: install best-of-generator
+          branch: main
+      - name: Install best-of-generator
         run: pip install git+https://github.com/ProperDocs/best-of-generator
-      - name: update-best-of-list
-        run: best-of generate projects.yaml --github-key=${{ secrets.GITHUB_TOKEN }} --libraries-key=${{ secrets.LIBRARIES_KEY }}
-      - name: push-update
-        uses: stefanzweifel/git-auto-commit-action@v5
+      - name: Generate best-of list
+        run: best-of generate projects.yaml --github-key=${{ secrets.GITHUB_TOKEN }}
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
         with:
-          branch: ${{ env.BRANCH_PREFIX }}${{ env.VERSION  }}
-          commit_user_name: best-of update
-          commit_user_email: actions@github.com
-          commit_message: Update best-of list for version ${{ env.VERSION  }}
-          tagging_message: ${{ env.VERSION  }}
-          skip_dirty_check: true
-          commit_options: "--allow-empty"
-      - name: create-pull-request
-        shell: bash
-        run: |
-          # Stops script execution if a command has an error
-          set -e
-          curl -fsSL https://github.com/github/hub/raw/master/script/get | bash -s 2.14.2
-          bin/hub pull-request -b ${{ env.DEFAULT_BRANCH }} -h ${{ env.BRANCH_PREFIX }}${{ env.VERSION  }} --no-edit -m "Best-of update: ${{ env.VERSION  }}" -m "To finish this update: Select <code>Merge pull request</code> below and <code>Confirm merge</code>. Also, make sure to publish the created draft release in the [releases section](../releases) as well." || true
-          rm bin/hub
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      # - name: create-release
-      #   uses: softprops/action-gh-release@v2
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      #   with:
-      #     tag_name: ${{ env.VERSION  }}
-      #     name: "Update: ${{ env.VERSION  }}"
-      #     body_path: "latest-changes.md"
-      #     draft: true
-      #     prerelease: false
+          add-paths: README.md
+          commit-message: 'Update best-of list'
+          title: 'Update best-of list'
+          committer: 'github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>'
+          author: 'github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>'
+          branch: update
