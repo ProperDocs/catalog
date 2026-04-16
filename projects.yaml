@@ -1,15 +1,3 @@
-configuration:
-  markdown_header_file: config/header.md
-  markdown_footer_file: config/footer.md
-  min_description_length: 0
-  max_description_length: 1000  # don't truncate descriptions
-  min_stars: 0
-  min_projectrank: 0
-  require_homepage: false
-  require_license: false
-  allowed_licenses: [all]
-  project_inactive_months: 12
-  project_dead_months: 99999  # "dead" is a somewhat strong assumption, so we avoid making it
 categories:
 - category: theming
   title: 🎨 Theming
@@ -45,19 +33,6 @@ categories:
   title: 🔧 Site building, site management
 - category: snippets-include
   title: 📁 Snippets & includes (reusing contents)
-labels:
-- label: plugin
-  image: https://cdn.icon-icons.com/icons2/1465/PNG/32/701electricplug_100845.png
-  description: MkDocs plugin
-- label: theme
-  image: https://cdn.icon-icons.com/icons2/1495/PNG/32/preferencesdesktoptheme_102980.png
-  description: MkDocs theme
-- label: project
-  image: https://cdn.icon-icons.com/icons2/1448/PNG/32/42498factory_99134.png
-  description: Mkdocs-based project (website, templates, etc.)
-- label: markdown
-  image: https://cdn.icon-icons.com/icons2/1459/PNG/32/2799201-jigsaw-processing_99781.png
-  description: Markdown extension(s)
 projects:
 - name: MkDocs theme
   properdocs_theme: [mkdocs]
