@@ -44,7 +44,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: install best-of-generator
-        run: pip install git+https://github.com/mkdocs/best-of-generator
+        run: pip install git+https://github.com/ProperDocs/best-of-generator
       - name: update-best-of-list
         run: best-of generate projects.yaml --github-key=${{ secrets.GITHUB_TOKEN }} --libraries-key=${{ secrets.LIBRARIES_KEY }}
       - name: push-update

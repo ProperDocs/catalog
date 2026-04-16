@@ -5,7 +5,7 @@
 </h1>
 
 <p align="center">
-    <strong>:trophy: :books: A list of awesome <a href="https://github.com/mkdocs/mkdocs">MkDocs</a> projects and plugins.</strong>
+    <strong>:trophy: :books: A list of awesome themes and plugins that work with <a href="https://github.com/ProperDocs/properdocs">ProperDocs</a>.</strong>
 </p>
 
 <p align="center">
