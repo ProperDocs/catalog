@@ -1,5 +1,6 @@
 import concurrent.futures
 import configparser
+import re
 import subprocess
 import sys
 import tempfile
@@ -19,7 +20,7 @@ EntrypointType: TypeAlias = Literal[
 class Project(TypedDict, total=False):
     name: Required[str]
     category: Required[str]
-    labels: Collection[str]
+    labels: Required[Collection[str]]
     properdocs_theme: str | Collection[str]
     mkdocs_theme: str | Collection[str]
     properdocs_plugin: str | Collection[str]
@@ -27,6 +28,7 @@ class Project(TypedDict, total=False):
     markdown_extension: str | Collection[str]
     github_id: str
     pypi_id: str
+    extra_dependencies: Mapping[str, str]
 
 
 def _get_as_list(mapping: Project, key: EntrypointType) -> Collection[str]:
@@ -49,14 +51,23 @@ all_labels: Collection[str] = dict.fromkeys(label["label"] for label in config["
 all_categories: Collection[str] = dict.fromkeys(category["category"] for category in config["categories"])
 
 
-def check_install_project(project: Project, install_name: str, errors: list[str] | None = None) -> list[str]:
+def check_install_project(project: Project, install_names: Sequence[str], errors: list[str] | None = None) -> list[str]:
     if errors is None:
         errors = []
 
     with tempfile.TemporaryDirectory(prefix="best-of-mkdocs-") as directory:
         try:
             subprocess.run(
-                ["pip", "install", "-U", "--ignore-requires-python", "--no-deps", "--target", directory, install_name],
+                [
+                    "pip",
+                    "install",
+                    "-U",
+                    "--ignore-requires-python",
+                    "--no-deps",
+                    "--target",
+                    directory,
+                    *install_names,
+                ],
                 stdin=subprocess.DEVNULL,
                 capture_output=True,
                 text=True,
@@ -67,12 +78,23 @@ def check_install_project(project: Project, install_name: str, errors: list[str]
             errors.append(f"Failed {e.cmd}:\n{e.stderr}")
             return errors
 
+        entry_points_files = list(Path(directory).glob("*.dist-info/entry_points.txt"))
+        if ":" not in install_names[0] or len(install_names) > 1:
+            entry_points_files = [
+                f
+                for f in entry_points_files
+                if re.search(
+                    r"^" + re.escape(install_names[0].replace("_", "-")) + r"-[0-9]",
+                    f.parent.name.replace("_", "-"),
+                    flags=re.IGNORECASE,
+                )
+            ]
+
         entry_points_parser = configparser.ConfigParser()
-        try:
-            [entry_points_file] = Path(directory).glob("*.dist-info/entry_points.txt")
-            entry_points_parser.read_string(entry_points_file.read_text())
-        except ValueError:
-            pass
+        if entry_points_files:
+            if len(entry_points_files) > 1:
+                errors.append(f"Found more than one entry points file after installing {install_names}")
+            entry_points_parser.read_string(entry_points_files[0].read_text())
         entry_points: dict[str, list[str]] = {
             sect: list(entry_points_parser[sect]) for sect in entry_points_parser.sections()
         }
@@ -155,18 +177,22 @@ for project in projects:
     install_name: str | None = None
     if any(key in project for keys in _kinds_to_label for key in keys):
         if "pypi_id" in project:
-            install_name = project["pypi_id"]
-            if "_" in install_name:
-                install_name = install_name.replace("_", "-")
+            install_name = project["pypi_id"].replace("_", "-")
+            if install_name != project["pypi_id"]:
                 errors.append(f"'pypi_id' should be '{install_name}' not '{project['pypi_id']}'")
         elif "github_id" in project:
             install_name = f"git+https://github.com/{project['github_id']}"
         else:
             errors.append("Missing 'pypi_id:'")
 
-    fut: Future[list[str]]
+    install_names: list[str] = []
     if install_name:
-        fut = pool.submit(check_install_project, project, install_name, errors)
+        install_names.append(install_name)
+    install_names.extend(project.get("extra_dependencies", {}).values())
+
+    fut: Future[list[str]]
+    if install_names:
+        fut = pool.submit(check_install_project, project, install_names, errors)
     else:
         fut = Future()
         fut.set_result(errors)
