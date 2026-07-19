@@ -20,7 +20,6 @@ EntrypointType: TypeAlias = Literal[
 class Project(TypedDict, total=False):
     name: Required[str]
     category: Required[str]
-    labels: Required[Collection[str]]
     properdocs_theme: str | Collection[str]
     mkdocs_theme: str | Collection[str]
     properdocs_plugin: str | Collection[str]
@@ -38,16 +37,17 @@ def _get_as_list(mapping: Project, key: EntrypointType) -> Collection[str]:
     return names
 
 
-_kinds_to_label: Mapping[Collection[EntrypointType], str] = {
-    ("properdocs_plugin", "mkdocs_plugin"): "plugin",
-    ("properdocs_theme", "mkdocs_theme"): "theme",
-    ("markdown_extension",): "markdown",
-}
+_entrypoint_kinds: Collection[EntrypointType] = [
+    "properdocs_plugin",
+    "mkdocs_plugin",
+    "properdocs_theme",
+    "mkdocs_theme",
+    "markdown_extension",
+]
 
 config: Mapping[str, Any] = yaml.safe_load(Path("projects.yaml").read_text(encoding="utf-8"))
 
 projects: Sequence[Project] = config["projects"]
-all_labels: Collection[str] = dict.fromkeys(label["label"] for label in config["labels"])
 all_categories: Collection[str] = dict.fromkeys(category["category"] for category in config["categories"])
 
 
@@ -127,7 +127,7 @@ def check_install_project(project: Project, install_names: Sequence[str], errors
 pool = concurrent.futures.ThreadPoolExecutor(4)
 
 # Tracks shadowing: projects earlier in the list take precedence.
-available: dict[EntrypointType, dict[str, str]] = {k: {} for keys in _kinds_to_label for k in keys}
+available: dict[EntrypointType, dict[str, str]] = {key: {} for key in _entrypoint_kinds}
 
 futures: list[tuple[str, Future[list[str]]]] = []
 
@@ -143,39 +143,29 @@ for project in projects:
         errors.append("Project must have a 'category:'")
     elif category not in all_categories:
         errors.append(f"Unknown category: {category!r} - should be one of: {', '.join(all_categories)}")
-    labels = project.get("labels", ())
-    for label in labels:
-        if label not in all_labels:
-            errors.append(f"Unknown label: {label!r} - should be one of: {', '.join(all_labels)}")
 
-    for kinds, label in _kinds_to_label.items():
-        if label == "plugin" and "theme" in labels and "plugin" not in labels:
-            pass
-        elif (label in labels) != any(bool(project.get(kind)) for kind in kinds):
-            errors.append(f"'{label}' label should be present if and only if '{kinds}:' is present")
+    for kind in _entrypoint_kinds:
+        items = _get_as_list(project, kind)
 
-        for kind in kinds:
-            items = _get_as_list(project, kind)
+        for item in items:
+            already_available: str | None = None
+            for subkind in (kind, cast("EntrypointType", kind.replace("mkdocs", "properdocs"))):
+                if already_available is None:
+                    already_available = available[subkind].get(item)
+                if already_available is None and "plugin" in kind:
+                    already_available = available[subkind].get(item.split("/")[-1])
 
-            for item in items:
-                already_available: str | None = None
-                for subkind in (kind, cast("EntrypointType", kind.replace("mkdocs", "properdocs"))):
-                    if already_available is None:
-                        already_available = available[subkind].get(item)
-                    if already_available is None and "plugin" in kind:
-                        already_available = available[subkind].get(item.split("/")[-1])
-
-                if already_available:
-                    if kind not in project.get("shadowed", ()):
-                        errors.append(
-                            f"{kind} '{item.split('/')[-1]}' is present in both project '{already_available}' and '{name}'.\n"
-                            f"If that is expected, the later of the two projects will be ignored, "
-                            f"and to indicate this, it should contain 'shadowed: [{kind}]'"
-                        )
-                available[kind].setdefault(item, name)
+            if already_available:
+                if kind not in project.get("shadowed", ()):
+                    errors.append(
+                        f"{kind} '{item.split('/')[-1]}' is present in both project '{already_available}' and '{name}'.\n"
+                        f"If that is expected, the later of the two projects will be ignored, "
+                        f"and to indicate this, it should contain 'shadowed: [{kind}]'"
+                    )
+            available[kind].setdefault(item, name)
 
     install_name: str | None = None
-    if any(key in project for keys in _kinds_to_label for key in keys):
+    if any(key in project for key in _entrypoint_kinds):
         if "pypi_id" in project:
             install_name = project["pypi_id"].replace("_", "-")
             if install_name != project["pypi_id"]:
